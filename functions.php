@@ -33,6 +33,7 @@ function get_steam_profile_xml($id)
     if ($oXML!=null)return $oXML;
     else return null;  
 }
+
 //returns the friends list of a user
 function get_steam_friends_xml($id)
 {
@@ -47,8 +48,7 @@ function get_steam_friends_xml($id)
     $friends_list = new SimpleXMLElement($friends_xml);
     
     if ($friends_list!=null)return $friends_list;
-    else return null;        
-    
+    else return null;            
 }
 
 function get_player_status($id)
@@ -299,7 +299,7 @@ function save_xml($xml,$filepath) //filepath is relative to root, includes file 
 	}
 	else //create file
 	{
-        if ($xml!=null) $xml->asXML($filepath);
+        	if ($xml!=null) $xml->asXML($filepath);
 	}
 }
 
