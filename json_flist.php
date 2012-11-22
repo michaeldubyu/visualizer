@@ -30,7 +30,6 @@ function get_profile_or_friends_list($userid, $update, $ret){
 		case "friends"://must pass in numeric $userid!
 			if (file_exists($friends_path)){
 				$friends_xml = simplexml_load_file($friends_path);
-				echo "exists";
 			}else{	
 				$friends_xml = get_steam_friends_xml($userid);
 				var_dump($friends_xml);
