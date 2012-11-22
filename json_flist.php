@@ -32,7 +32,6 @@ function get_profile_or_friends_list($userid, $update, $ret){
 				$friends_xml = simplexml_load_file($friends_path);
 			}else{	
 				$friends_xml = get_steam_friends_xml($userid);
-				var_dump($friends_xml);
 				if ($friends_xml!=null)	$friends_xml->asXML($friends_path);
 			}
 			break;

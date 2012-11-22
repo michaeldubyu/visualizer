@@ -50,7 +50,7 @@ function get_steam_friends_xml($id)
         $sXML = download_page($friendsReq);
     }
  
-    $friends_list = new SimpleXMLElement($friends_xml);
+    $friends_list = new SimpleXMLElement($sXML);
     
     if ($friends_list!=null)return $friends_list;
     else return null;            
