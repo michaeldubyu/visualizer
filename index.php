@@ -1,3 +1,4 @@
+<?php header("Content-type: text/html; charset=utf-8"); ?>
 <html>
 <head>
 <script type='text/javascript' src='lib/jquery-1.8.3.min.js'></script>
@@ -15,7 +16,11 @@
 
 <h1>STEAM FRIEND VISUALIZER</h1>
 
-<div id='container'><canvas id='viewport' width='1200' height='1000'></canvas></div>
+<div id='container'>
+	<img src='lib/loading.gif' id='loading' />
+	<div id='loading_msg'></div>
+	<canvas id='viewport' width='1200' height='1000'></canvas>
+</div>
 
 <div id='form'>
 	<span id='user_feedback'></span>

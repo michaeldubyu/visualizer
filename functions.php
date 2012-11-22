@@ -26,9 +26,13 @@ function get_steam_profile_xml($id)
     if (is_numeric($id)) $sXML = download_page($pageNumeric);
     else $sXML = download_page($pageAlpha);
     
-    if ($sXML==false) return null;
+    $tries = 0;
+     while ($sXML==null && $tries<5){
+        if (is_numeric($id))$sXML = download_page($pageNumeric);
+	else $sXML = download_page($pageAlpha);
+    }
 
-    $oXML = new SimpleXMLElement($sXML);
+   $oXML = new SimpleXMLElement($sXML);
   
     if ($oXML!=null)return $oXML;
     else return null;  
@@ -42,9 +46,10 @@ function get_steam_friends_xml($id)
     $tempid = trim($id);
     $friendsReq = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=$key&steamid=$id&relationship=friend&format=xml";
     
-    $friends_xml = download_page($friendsReq);
-    if ($friends_xml == false) return null;
-    
+    while ($sXML==null && $tries<5){
+        $sXML = download_page($friendsReq);
+    }
+ 
     $friends_list = new SimpleXMLElement($friends_xml);
     
     if ($friends_list!=null)return $friends_list;

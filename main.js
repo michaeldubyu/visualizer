@@ -9,7 +9,7 @@
 	  init:function(system){
 		particleSystem = system
 		particleSystem.screenSize(canvas.width, canvas.height) 
-		particleSystem.screenPadding(0,20,0,20);
+		particleSystem.screenPadding(20,60,20,60);
 		$(window).resize(that.resize);
 		that.resize();
 		that.initMouseHandling()
@@ -134,13 +134,12 @@
 			var pos = $(canvas).offset();
 			_mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
 			selected = nearest = dragged = particleSystem.nearest(_mouseP);
-
 			if (dragged.node !== null) dragged.node.fixed = true
 
 			$(canvas).bind('mousemove', handler.dragged)
 			$(window).bind('mouseup', handler.dropped)
 
-			return false
+			return false;
 		  }
 		}
 		$(canvas).mousedown(handler.clicked);
@@ -178,17 +177,22 @@
 		false
 	}
 	return that
-  }    	
-		
-	$(document).ready(function(){	
-		
-		var sys = arbor.ParticleSystem(1000, 600, 0.5);
+  }    
+	
+	function htmlDecode(input){
+  		var e = document.createElement('div');
+  		e.innerHTML = input;
+  		return e.childNodes.length === 0 ? "" : e.childNodes[0].nodeValue;
+	}	
+	
+	$(document).ready(function(){			
+		var sys = arbor.ParticleSystem(500, 500, 0.7, true, 60, 0.02, 0.8);
 		sys.parameters({gravity:true});
 		sys.renderer = myRenderer("#viewport");
 
 		$("#form form").submit(function(){
 			var val = $("#userid:input").val();
-			if (/^[a-z0-9]+$/i.test(val)) location.href = "/" + val;
+			if (/^[a-z0-9-_]+$/i.test(val)) location.href = "/" + val;
 			else $("#user_feedback").text("Please enter a valid steamid or community id!");
 			return false;
 		});
@@ -212,16 +216,55 @@
 			sys.addEdge('f','a', data);
 			sys.addEdge('f','e');
 		}	
-		else if (/^[a-z0-9]+$/i.test(user)){	
-                	$.ajax({
+		else if (/^[a-z0-9-_]+$/i.test(user)){	
+                	$("#loading").show();
+			$("#loading_msg").show();
+			$("#loading_msg").html("Downloading friend information...");
+			$.ajax({
                        		url: "json_flist.php?userid=" + user,
                        		method: 'GET',
                        		dataType: 'json',
-                		success: addFriends
-                	});
+                		success: addFriends,
+                		cache:false
+			});
+
+			function addSelf(d){
+				self_name = htmlDecode(d.display_name);
+				self = new Object();
+				self.label = self_name;
+				self.color = '#b01800';
+				self.mass = 2;	
+				self.fixed = true;
+				self.x=-0.5;
+				self.y=-0.5;	
+				sys.addNode(self_name,self);
+			}
 
 			function addFriends(data){
-				
+				$("#loading").hide();
+				$("#loading_msg").hide();
+				if (data.display_name!='null'){
+					addSelf(data[0]);
+
+					$.each(data.splice(1), function(index,item){
+						friend = new Object();
+						friend.label = htmlDecode(item.display_name);
+						friend.steamid = item.steamid;
+						
+						sys.addNode(friend.label,friend);
+						sys.addEdge(self_name,friend.label);
+					});
+				}else{
+					error = new Object();
+					if (data.display_name=='null')error.label = "Invalid SteamID or Community ID given, or privacy is not set to public!";
+					else error.label = "Friend data unavailable - please check your privacy settings or refresh.";
+					error.color = "#B01800";
+					error.fixed = true;
+					error.x=-0.5;
+					error.y=-0.5;
+					sys.addNode(error.label,error);	
+				}	
+
 			}
 		}
 		else{
