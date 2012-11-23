@@ -21,7 +21,7 @@ h1{
 	width:128px;
 	height:128px;
 	position : absolute;
-	top:50%;
+	top:45%;
 	left:50%;
 	margin-top:-64px;
 	margin-left:-64px;
@@ -29,14 +29,14 @@ h1{
 }
 
 #loading_msg{
-	width:300px;
+	width:600px;
 	height:50px;
 	position : absolute;
 	top:60%;
 	left:50%;
 	text-align:center;
 	margin-top:-25px;
-	margin-left:-150px;
+	margin-left:-300px;
 	display:none;
 }
 

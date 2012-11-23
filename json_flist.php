@@ -55,10 +55,16 @@ function get_profile_or_friends_list($userid, $update, $ret){
 *foreach friend, check if steamid:name exists in db - else get their profile information - store into db mapping steamid:name
 */
 
-if (isset($_GET['userid']) && $_GET['userid']!=null){
+if (isset($_GET['userid']) && $_GET['userid']!=null && isset($_GET['jobid']) && $_GET['jobid']!=null){
 
 	$id = $_GET['userid'];
+	$jobid = $_GET['jobid'];
 
+	$mysqli = mysqli_connect($host,$username,$password,$db);
+	if(mysqli_connect_errno()) echo mysqli_connect_error();
+	mysqli_set_charset($mysqli,'utf8');
+	mysqli_query($mysqli,"SET NAMES 'utf8'");
+	
 	$profile_xml = get_profile_or_friends_list($id,"profile","profile");
 	$numerical_id = $profile_xml->steamID64;
 	if (isset($profile_xml->steamID) && $profile_xml->privacyState=="public"){
@@ -81,19 +87,29 @@ if (isset($_GET['userid']) && $_GET['userid']!=null){
 			$self_data = array("steamid"=>(string)$numerical_id, "display_name"=>(string)$self_name);
 			$friend_data[] = $self_data;
 
-			foreach($friends_list as $steamid){
+			/*
+			*Insert job into db alerting that we're beginning to check friends.
+			*/
 
-				$mysqli = mysqli_connect($host,$username,$password,$db);
-				if(mysqli_connect_errno()) echo mysqli_connect_error();
-				mysqli_set_charset($mysqli,'utf8');
-				mysqli_query($mysqli,"SET NAMES 'utf8'");
-			
+			$start_time = time();
+			$num_friends = count($friends_list);
+			$progress = "INSERT INTO jobs (`id`,`progressed`,`total`,`start_time`,`complete_time`,`state`) VALUES ('$jobid','0','$num_friends','$start_time','0','0')";
+			mysqli_query($mysqli,$progress);
+
+			/*
+			*Iterate over each friend and get their name from profile if it doesn't 
+			*exist in the db.
+			*/
+			$i = 1;
+			foreach($friends_list as $steamid){
 				$q = "SELECT * FROM usernames WHERE steamid=$steamid";
 				$re = mysqli_query($mysqli,$q);
 				$rows = mysqli_num_rows($re);
 			
 				if ($rows==0){
-					$profile_xml = get_profile_or_friends_list($steamid,"profile","profile");
+					try{
+						$profile_xml = get_profile_or_friends_list($steamid,"profile","profile");
+					}catch (Exception $e){ $e->getMessage();}
 					if ($profile_xml->status!='15' && $profile_xml!=null){
 						$display_name = simplexml_load_string($profile_xml->steamID->asXML(), null, LIBXML_NOCDATA);
 						$ins = "INSERT INTO usernames (`steamid`,`display_name`) VALUES ('$steamid','$display_name')";
@@ -105,8 +121,11 @@ if (isset($_GET['userid']) && $_GET['userid']!=null){
 					//does exist in db
 					$friend_data[] = mysqli_fetch_assoc($re);	
 				}
+				$update_progress = "UPDATE jobs SET `progressed`='$i' WHERE `id`='$jobid'";
+				mysqli_query($mysqli,$update_progress);
+				$i++;
 			}
-		echo json_encode($friend_data);
+			echo json_encode($friend_data);
 		}else{
 			//bad response from servers
 			$bad_resp = array("steamid"=>"no_friend", "display_name"=>"no_friend");

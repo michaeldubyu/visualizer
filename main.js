@@ -9,7 +9,7 @@
 	  init:function(system){
 		particleSystem = system
 		particleSystem.screenSize(canvas.width, canvas.height) 
-		particleSystem.screenPadding(20,60,20,60);
+		particleSystem.screenPadding(20,80,20,80);
 		$(window).resize(that.resize);
 		that.resize();
 		that.initMouseHandling()
@@ -92,8 +92,8 @@
 			ctx.save()
 			  // move to the head position of the edge we just drew
 			  var wt = !isNaN(weight) ? parseFloat(weight) : 1
-			  var arrowLength = 6 + wt
-			  var arrowWidth = 2 + wt
+			  var arrowLength = 5+ wt
+			  var arrowWidth = 5 + wt
 			  ctx.fillStyle = (color) ? color : "#a6a6a6"
 			  ctx.translate(head.x, head.y);
 			  ctx.rotate(Math.atan2(head.y - tail.y, head.x - tail.x));
@@ -134,11 +134,10 @@
 			var pos = $(canvas).offset();
 			_mouseP = arbor.Point(e.pageX-pos.left, e.pageY-pos.top)
 			selected = nearest = dragged = particleSystem.nearest(_mouseP);
-			if (dragged.node !== null) dragged.node.fixed = true
-
-			$(canvas).bind('mousemove', handler.dragged)
-			$(window).bind('mouseup', handler.dropped)
-
+			
+			console.log(selected);
+			//location.href = "/" + selected.node.data.steamid;
+		
 			return false;
 		  }
 		}
@@ -186,7 +185,8 @@
 	}	
 	
 	$(document).ready(function(){			
-		var sys = arbor.ParticleSystem(500, 500, 0.7, true, 60, 0.02, 0.8);
+		
+		var sys = arbor.ParticleSystem(4000, 500, 0.7, true, 60, 0.02, 0.8);
 		sys.parameters({gravity:true});
 		sys.renderer = myRenderer("#viewport");
 
@@ -218,16 +218,28 @@
 		}	
 		else if (/^[a-z0-9-_]+$/i.test(user)){	
                 	$("#loading").show();
-			$("#loading_msg").show();
-			$("#loading_msg").html("Downloading friend information...");
-			$.ajax({
-                       		url: "json_flist.php?userid=" + user,
-                       		method: 'GET',
-                       		dataType: 'json',
-                		success: addFriends,
-                		cache:false
-			});
+			var jobs = new Array();
+			var jobid = Math.floor(Math.random()*10000000)+1;
+			var progress=null;	
+			var int;
 
+			function progress_update(){
+				$.ajax({
+					url: "check_progress.php?jobid=" + jobid,
+					method: "GET",
+					dataType: 'json',
+					success: function(data){progress=data;} ,
+					cache: false,
+				});	
+				if (progress!=null){
+					console.log(progress);
+					var progressed = progress.progressed;
+					var total = progress.total;
+					var percent = new String((progressed/total)*100);
+					$("#loading_msg").html("Downloading and saving friend data... " + percent.substr(0,4) + "% complete ( " + progressed + "/" + total + " )<BR \>Only the first time will take a while. If progress seems stuck, try refreshing.");
+				}	
+			}	
+		
 			function addSelf(d){
 				self_name = htmlDecode(d.display_name);
 				self = new Object();
@@ -241,18 +253,25 @@
 			}
 
 			function addFriends(data){
+				console.log("friend list ajax finished");
+				jobs.pop(jobid);
+				int = window.clearInterval(int);
+			
 				$("#loading").hide();
 				$("#loading_msg").hide();
+				$("#viewport").show();
 				if (data.display_name!='null'){
 					addSelf(data[0]);
 
 					$.each(data.splice(1), function(index,item){
 						friend = new Object();
 						friend.label = htmlDecode(item.display_name);
-						friend.steamid = item.steamid;
-						
+						friend.steamid = new String(item.steamid);
+						edge_data = new Object();
+						edge_data.directed = true;;
+	
 						sys.addNode(friend.label,friend);
-						sys.addEdge(self_name,friend.label);
+						sys.addEdge(self_name,friend.label, edge_data);
 					});
 				}else{
 					error = new Object();
@@ -265,6 +284,22 @@
 					sys.addNode(error.label,error);	
 				}	
 
+			}
+			var flist = $.ajax({
+                       		url: "json_flist.php?userid=" + user + "&jobid=" + jobid,
+                       		method: 'GET',
+                       		dataType: 'json',
+                		success: addFriends,
+				cache: true
+			});
+			$(window).unload( function() { flist.abort(); } );
+			$("#loading_msg").show();
+			$("#loading_msg").html("Downloading friends list...");				
+			jobs.push(jobid);
+			
+			if (jobs.indexOf(jobid)==-1 || progress==undefined){
+				int = window.setInterval(function(){progress_update()},5000);
+				console.log("setting interval");
 			}
 		}
 		else{

@@ -27,15 +27,17 @@ function get_steam_profile_xml($id)
     else $sXML = download_page($pageAlpha);
     
     $tries = 0;
-     while ($sXML==null && $tries<5){
+     while ($sXML==null && $tries<3){
         if (is_numeric($id))$sXML = download_page($pageNumeric);
 	else $sXML = download_page($pageAlpha);
+	$tries++;
     }
 
-   $oXML = new SimpleXMLElement($sXML);
-  
+    if ($sXML==null) return null;
+    @$oXML = new SimpleXMLElement($sXML);
+   
     if ($oXML!=null)return $oXML;
-    else return null;  
+    return null;  
 }
 
 //returns the friends list of a user
@@ -45,15 +47,19 @@ function get_steam_friends_xml($id)
     
     $tempid = trim($id);
     $friendsReq = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=$key&steamid=$id&relationship=friend&format=xml";
-    
-    while ($sXML==null && $tries<5){
+   
+    $tries=0; 
+    while ($sXML==null && $tries<3){
         $sXML = download_page($friendsReq);
+	$tries++;
     }
+	
+    if ($sXML==null) return null;	
  
     $friends_list = new SimpleXMLElement($sXML);
     
     if ($friends_list!=null)return $friends_list;
-    else return null;            
+    return null;            
 }
 
 function get_player_status($id)
